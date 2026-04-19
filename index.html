@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CleanTrack — Laundry Order System</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e4e2dc;
+    --text: #1a1916;
+    --muted: #6b6960;
+    --accent: #1a6b4a;
+    --accent-light: #e8f5ef;
+    --danger: #c0392b;
+    --warn-bg: #fef9ec;
+    --warn-border: #f5c842;
+    --radius: 10px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; min-height: 100vh; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
+  .logo { font-size: 17px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+  .logo span { color: var(--text); font-weight: 400; }
+  .main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .tabs { display: flex; gap: 2px; background: var(--border); border-radius: var(--radius); padding: 3px; width: fit-content; margin-bottom: 2rem; }
+  .tab { padding: 7px 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--muted); border-radius: 8px; transition: all 0.15s; }
+  .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .section { display: none; } .section.active { display: block; }
+  .page-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .form-group { margin-bottom: 14px; }
+  label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 6px; }
+  input, select { width: 100%; padding: 9px 12px; font-size: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,107,74,.1); }
+  input.err, select.err { border-color: var(--danger); }
+  .field-err { font-size: 12px; color: var(--danger); margin-top: 4px; display: none; }
+  .garment-row { display: grid; grid-template-columns: 2fr 90px auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .garment-row .price-hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 2px; }
+  .del-btn { width: 32px; height: 36px; display: flex; align-items: center; justify-content: center; background: none; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 16px; transition: all 0.15s; }
+  .del-btn:hover { border-color: var(--danger); color: var(--danger); background: #fdf2f2; }
+  .add-garment-btn { padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px dashed var(--border); border-radius: 8px; background: transparent; color: var(--accent); width: 100%; margin-top: 4px; transition: all 0.15s; }
+  .add-garment-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+  .total-strip { background: var(--accent-light); border: 1px solid #a8d9c0; border-radius: var(--radius); padding: 14px 16px; margin-top: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .total-strip .lbl { font-size: 13px; color: var(--accent); font-weight: 500; }
+  .total-strip .amt { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .est-del { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 18px; }
+  .btn { padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: all 0.15s; }
+  .btn:hover { background: var(--bg); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { background: #155c3e; }
+  .btn.danger { color: var(--danger); border-color: var(--danger); }
+  .btn.danger:hover { background: #fdf2f2; }
+  .toast { border-radius: var(--radius); padding: 12px 16px; font-size: 13px; margin-bottom: 1.25rem; display: none; }
+  .toast.success { background: var(--accent-light); border: 1px solid #a8d9c0; color: var(--accent); }
+  .toast.error { background: #fdf2f2; border: 1px solid #f5b7b1; color: var(--danger); }
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .filter-bar input, .filter-bar select { width: auto; flex: 1; min-width: 140px; }
+  .orders-meta { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
+  .order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 10px; transition: box-shadow 0.15s; }
+  .order-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .order-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .order-id-tag { font-size: 11px; font-weight: 600; font-family: monospace; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 2px 8px; }
+  .cust-name { font-size: 15px; font-weight: 600; margin: 2px 0; }
+  .cust-phone { font-size: 13px; color: var(--muted); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+  .RECEIVED { background: #e8f0fe; color: #1a56a4; }
+  .PROCESSING { background: #fef9ec; color: #8a6200; }
+  .READY { background: var(--accent-light); color: var(--accent); }
+  .DELIVERED { background: #f0f0f0; color: #444; }
+  .garment-tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .gtag { font-size: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 2px 8px; color: var(--muted); }
+  .order-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border); gap: 8px; flex-wrap: wrap; }
+  .order-amount { font-size: 16px; font-weight: 700; }
+  .order-dates { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .status-sel { padding: 5px 10px; font-size: 12px; font-weight: 600; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; width: auto; }
+  .empty-state { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
+  .metric-value { font-size: 28px; font-weight: 700; color: var(--text); }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { font-size: 12px; color: var(--muted); width: 100px; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--bg); border-radius: 4px; height: 18px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .bar-count { font-size: 13px; font-weight: 600; width: 28px; text-align: right; }
+  .dash-section-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .api-offline { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: #7a5c00; margin-bottom: 1.5rem; display: none; }
+  @media (max-width: 640px) {
+    .grid2, .grid4 { grid-template-columns: 1fr; }
+    .grid3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CleanTrack <span>/ Laundry OS</span></div>
+  <div style="font-size:12px;color:var(--muted);" id="api-status-dot">● connecting…</div>
+</header>
+
+<div class="main">
+
+  <div id="api-offline-banner" class="api-offline">
+    ⚠ Cannot reach the API server. Make sure the backend is running on <strong>localhost:3000</strong>.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('create')">Create Order</button>
+    <button class="tab" onclick="showTab('orders')">Orders</button>
+    <button class="tab" onclick="showTab('dashboard')">Dashboard</button>
+  </div>
+
+  <!-- ── CREATE ORDER ─────────────────────────────── -->
+  <div id="sec-create" class="section active">
+    <div class="page-title">New Order</div>
+    <div class="page-sub">Fill in customer details and add garments to create an order.</div>
+    <div id="toast-create" class="toast success"></div>
+
+    <div class="grid2" style="margin-bottom:0">
+      <div class="form-group">
+        <label>Customer Name</label>
+        <input id="c-name" type="text" placeholder="e.g. Ramesh Kumar">
+        <div class="field-err" id="err-name">Name is required</div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input id="c-phone" type="tel" placeholder="10-digit mobile number">
+        <div class="field-err" id="err-phone">Enter a valid 10-digit number</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <label>Garments</label>
+      <div id="garments-container"></div>
+      <button class="add-garment-btn" onclick="addGarmentRow()">+ Add garment</button>
+      <div class="field-err" id="err-garments" style="display:block;display:none">Add at least one garment</div>
+    </div>
+
+    <div class="total-strip" id="total-strip">
+      <div>
+        <div class="lbl">Total Bill Amount</div>
+        <div class="est-del" id="est-del-label"></div>
+      </div>
+      <div class="amt" id="total-display">₹0.00</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn primary" onclick="submitOrder()">Create Order</button>
+      <button class="btn" onclick="resetForm()">Reset</button>
+    </div>
+  </div>
+
+  <!-- ── VIEW ORDERS ──────────────────────────────── -->
+  <div id="sec-orders" class="section">
+    <div class="page-title">All Orders</div>
+    <div class="page-sub">Browse, search, and update order statuses.</div>
+    <div class="filter-bar">
+      <input id="f-search" type="text" placeholder="Search name or phone…" oninput="loadOrders()">
+      <select id="f-status" onchange="loadOrders()">
+        <option value="">All statuses</option>
+        <option>RECEIVED</option><option>PROCESSING</option>
+        <option>READY</option><option>DELIVERED</option>
+      </select>
+      <select id="f-garment" onchange="loadOrders()">
+        <option value="">All garments</option>
+      </select>
+      <button class="btn" onclick="loadOrders()" style="flex:0">↻ Refresh</button>
+    </div>
+    <div id="orders-meta" class="orders-meta"></div>
+    <div id="orders-list"></div>
+  </div>
+
+  <!-- ── DASHBOARD ────────────────────────────────── -->
+  <div id="sec-dashboard" class="section">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Live summary of all orders and revenue.</div>
+    <div class="grid4" id="dash-metrics" style="margin-bottom:1.5rem"></div>
+    <div class="grid2" style="gap:16px">
+      <div class="card">
+        <div class="dash-section-title">Orders by status</div>
+        <div id="dash-status"></div>
+      </div>
+      <div class="card">
+        <div class="dash-section-title">Top garments</div>
+        <div id="dash-garments"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = "";  // same origin — served by Express
+const PRICES = {
+  Shirt:50, Pants:80, Saree:150, Kurta:70, Suit:250,
+  "Bed Sheet":120, Jacket:200, Dress:130, Sweater:100, Dupatta:60
+};
+const GARMENTS = Object.keys(PRICES);
+const STATUS_COLORS = { RECEIVED:"#1a56a4", PROCESSING:"#8a6200", READY:"#1a6b4a", DELIVERED:"#444" };
+const STATUS_BG = { RECEIVED:"#e8f0fe", PROCESSING:"#fef9ec", READY:"#e8f5ef", DELIVERED:"#f0f0f0" };
+const BAR_COLORS = ["#378ADD","#EF9F27","#1D9E75","#888780"];
+let garmentRowIds = [];
+
+/* ── Tabs ── */
+function showTab(t) {
+  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelector(`[onclick="showTab('${t}')"]`).classList.add("active");
+  document.getElementById("sec-" + t).classList.add("active");
+  if (t === "orders") loadOrders();
+  if (t === "dashboard") loadDashboard();
+}
+
+/* ── Garment Rows ── */
+function addGarmentRow(name="", qty=1) {
+  const id = Date.now();
+  garmentRowIds.push(id);
+  const c = document.getElementById("garments-container");
+  const div = document.createElement("div");
+  div.id = "gr-" + id;
+  div.className = "garment-row";
+  div.innerHTML = `
+    <div>
+      <select id="gname-${id}" onchange="calcTotal()">
+        <option value="">— Select garment —</option>
+        ${GARMENTS.map(g => `<option${g===name?" selected":""}>${g}</option>`).join("")}
+      </select>
+      <div class="price-hint" id="ghint-${id}"></div>
+    </div>
+    <input type="number" id="gqty-${id}" min="1" value="${qty}" oninput="calcTotal()">
+    <button class="del-btn" onclick="removeGarmentRow(${id})">×</button>`;
+  c.appendChild(div);
+  calcTotal();
+}
+
+function removeGarmentRow(id) {
+  garmentRowIds = garmentRowIds.filter(r => r !== id);
+  document.getElementById("gr-" + id)?.remove();
+  calcTotal();
+}
+
+function calcTotal() {
+  let total = 0;
+  garmentRowIds.forEach(id => {
+    const g = document.getElementById("gname-" + id)?.value;
+    const q = parseInt(document.getElementById("gqty-" + id)?.value) || 0;
+    const hint = document.getElementById("ghint-" + id);
+    if (g && PRICES[g]) {
+      const sub = PRICES[g] * q;
+      total += sub;
+      if (hint) hint.textContent = `₹${PRICES[g]} × ${q} = ₹${sub}`;
+    } else if (hint) hint.textContent = "";
+  });
+  document.getElementById("total-display").textContent = "₹" + total.toFixed(2);
+  const hasSomething = garmentRowIds.length > 0;
+  const d = new Date(); d.setDate(d.getDate() + 3);
+  document.getElementById("est-del-label").textContent = hasSomething
+    ? "Estimated delivery: " + d.toLocaleDateString("en-IN", {day:"numeric",month:"short",year:"numeric"})
+    : "";
+}
+
+function resetForm() {
+  document.getElementById("c-name").value = "";
+  document.getElementById("c-phone").value = "";
+  document.getElementById("garments-container").innerHTML = "";
+  garmentRowIds = [];
+  calcTotal();
+  ["err-name","err-phone","err-garments"].forEach(id => { document.getElementById(id).style.display="none"; });
+  ["c-name","c-phone"].forEach(id => document.getElementById(id).classList.remove("err"));
+}
+
+/* ── Create Order ── */
+async function submitOrder() {
+  let valid = true;
+  const name = document.getElementById("c-name").value.trim();
+  const phone = document.getElementById("c-phone").value.trim();
+
+  const setErr = (id, show) => {
+    document.getElementById(id).style.display = show ? "block" : "none";
+  };
+  setErr("err-name", !name);
+  document.getElementById("c-name").classList.toggle("err", !name);
+  if (!name) valid = false;
+
+  const phoneOk = /^[0-9]{10}$/.test(phone);
+  setErr("err-phone", !phoneOk);
+  document.getElementById("c-phone").classList.toggle("err", !phoneOk);
+  if (!phoneOk) valid = false;
+
+  const garments = [];
+  garmentRowIds.forEach(id => {
+    const n = document.getElementById("gname-" + id)?.value;
+    const q = parseInt(document.getElementById("gqty-" + id)?.value) || 0;
+    if (n && q > 0) garments.push({ name: n, quantity: q });
+  });
+  setErr("err-garments", garments.length === 0);
+  if (garments.length === 0) valid = false;
+  if (!valid) return;
+
+  try {
+    const res = await fetch(API + "/api/orders", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerName: name, phoneNumber: phone, garments })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    showToast("toast-create", `✓ Order ${data.data.id} created! Total: ₹${data.data.totalAmount.toFixed(2)}`, "success");
+    resetForm();
+    addGarmentRow();
+  } catch (e) {
+    showToast("toast-create", "Error: " + e.message, "error");
+  }
+}
+
+/* ── Load Orders ── */
+async function loadOrders() {
+  const search = document.getElementById("f-search")?.value || "";
+  const status = document.getElementById("f-status")?.value || "";
+  const garment = document.getElementById("f-garment")?.value || "";
+  const params = new URLSearchParams();
+  if (search) { params.set("name", search); params.set("phone", search); }
+  if (status) params.set("status", status);
+  if (garment) params.set("garment", garment);
+
+  try {
+    const res = await fetch(API + "/api/orders?" + params);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    renderOrders(data.data, data.count);
+    populateGarmentFilter(data.data);
+  } catch (e) {
+    document.getElementById("orders-list").innerHTML = `<div class="empty-state">Could not load orders: ${e.message}</div>`;
+  }
+}
+
+function renderOrders(list, count) {
+  document.getElementById("orders-meta").textContent = `${count} order${count !== 1 ? "s" : ""} found`;
+  const el = document.getElementById("orders-list");
+  if (!list.length) { el.innerHTML = '<div class="empty-state">No orders found</div>'; return; }
+  el.innerHTML = list.map(o => `
+    <div class="order-card">
+      <div class="order-head">
+        <div>
+          <span class="order-id-tag">${o.id}</span>
+          <div class="cust-name" style="margin-top:6px">${o.customerName}</div>
+          <div class="cust-phone">${o.phoneNumber}</div>
+        </div>
+        <span class="badge ${o.status}">${o.status}</span>
+      </div>
+      <div class="garment-tags">
+        ${o.garments.map(g => `<span class="gtag">${g.name} ×${g.quantity} (₹${g.subtotal})</span>`).join("")}
+      </div>
+      <div class="order-foot">
+        <div>
+          <div class="order-amount">₹${o.totalAmount.toFixed(2)}</div>
+          <div class="order-dates">
+            Created: ${new Date(o.createdAt).toLocaleDateString("en-IN")} &nbsp;·&nbsp;
+            Est. delivery: ${o.estimatedDelivery}
+          </div>
+        </div>
+        <select class="status-sel" onchange="updateStatus('${o.id}', this.value)">
+          ${["RECEIVED","PROCESSING","READY","DELIVERED"].map(s =>
+            `<option${s===o.status?" selected":""}>${s}</option>`).join("")}
+        </select>
+      </div>
+    </div>`).join("");
+}
+
+async function updateStatus(id, status) {
+  try {
+    await fetch(API + `/api/orders/${id}/status`, {
+      method: "PATCH", headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ status })
+    });
+    loadOrders();
+  } catch(e) { alert("Failed to update status: " + e.message); }
+}
+
+function populateGarmentFilter(orders) {
+  const sel = document.getElementById("f-garment");
+  const cur = sel.value;
+  const used = new Set(orders.flatMap(o => o.garments.map(g => g.name)));
+  sel.innerHTML = '<option value="">All garments</option>' +
+    [...used].map(g => `<option${g===cur?" selected":""}>${g}</option>`).join("");
+}
+
+/* ── Dashboard ── */
+async function loadDashboard() {
+  try {
+    const res = await fetch(API + "/api/dashboard");
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    renderDashboard(data.data);
+  } catch (e) {
+    document.getElementById("dash-metrics").innerHTML = `<p style="color:var(--danger)">Could not load: ${e.message}</p>`;
+  }
+}
+
+function renderDashboard(d) {
+  const metrics = [
+    { label: "Total Orders", value: d.totalOrders },
+    { label: "Total Revenue", value: "₹" + d.totalRevenue.toLocaleString("en-IN") },
+    { label: "Delivered", value: d.ordersByStatus.DELIVERED },
+    { label: "Pending", value: d.totalOrders - d.ordersByStatus.DELIVERED },
+  ];
+  document.getElementById("dash-metrics").innerHTML = metrics.map(m => `
+    <div class="metric-card">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-value">${m.value}</div>
+    </div>`).join("");
+
+  const statuses = ["RECEIVED","PROCESSING","READY","DELIVERED"];
+  const maxS = Math.max(...statuses.map(s => d.ordersByStatus[s] || 0), 1);
+  document.getElementById("dash-status").innerHTML = statuses.map((s, i) => `
+    <div class="bar-row">
+      <div class="bar-label">${s}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${((d.ordersByStatus[s]||0)/maxS*100).toFixed(1)}%;background:${BAR_COLORS[i]}"></div>
+      </div>
+      <div class="bar-count">${d.ordersByStatus[s] || 0}</div>
+    </div>`).join("");
+
+  if (!d.topGarments.length) {
+    document.getElementById("dash-garments").innerHTML = '<div class="empty-state">No garment data yet</div>';
+    return;
+  }
+  const maxG = d.topGarments[0].count;
+  document.getElementById("dash-garments").innerHTML = d.topGarments.map(g => `
+    <div class="bar-row">
+      <div class="bar-label">${g.name}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(g.count/maxG*100).toFixed(1)}%;background:#1D9E75"></div>
+      </div>
+      <div class="bar-count">${g.count}</div>
+    </div>`).join("");
+}
+
+/* ── Toast ── */
+function showToast(id, msg, type="success") {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = "toast " + type;
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 5000);
+}
+
+/* ── API Health Check ── */
+async function checkApi() {
+  try {
+    await fetch(API + "/api/prices");
+    document.getElementById("api-status-dot").textContent = "● connected";
+    document.getElementById("api-status-dot").style.color = "#1a6b4a";
+  } catch {
+    document.getElementById("api-offline-banner").style.display = "block";
+    document.getElementById("api-status-dot").textContent = "● offline";
+    document.getElementById("api-status-dot").style.color = "#c0392b";
+  }
+}
+
+/* ── Init ── */
+addGarmentRow();
+checkApi();
+</script>
+</body>
+</html>

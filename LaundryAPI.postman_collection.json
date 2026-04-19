@@ -1,0 +1,164 @@
+{
+  "info": {
+    "name": "Laundry Order Management API",
+    "description": "Complete API collection for the Mini Laundry Order Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000", "type": "string" },
+    { "key": "order_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Prices",
+      "item": [
+        {
+          "name": "Get all garment prices",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/prices",
+            "description": "Returns the price list for all supported garment types."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) pm.collectionVariables.set('order_id', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/orders",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Ramesh Kumar\",\n  \"phoneNumber\": \"9876543210\",\n  \"garments\": [\n    { \"name\": \"Shirt\", \"quantity\": 3 },\n    { \"name\": \"Saree\", \"quantity\": 2 },\n    { \"name\": \"Pants\", \"quantity\": 1 }\n  ]\n}"
+            },
+            "description": "Creates a new laundry order. Saves order ID to collection variable automatically."
+          }
+        },
+        {
+          "name": "Get all orders",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/orders",
+            "description": "Returns all orders. No filters applied."
+          }
+        },
+        {
+          "name": "Filter by status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/orders?status=RECEIVED",
+              "query": [{ "key": "status", "value": "RECEIVED" }]
+            },
+            "description": "Filter orders by status: RECEIVED | PROCESSING | READY | DELIVERED"
+          }
+        },
+        {
+          "name": "Search by name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/orders?name=ramesh",
+              "query": [{ "key": "name", "value": "ramesh" }]
+            }
+          }
+        },
+        {
+          "name": "Search by phone",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/orders?phone=9876543210",
+              "query": [{ "key": "phone", "value": "9876543210" }]
+            }
+          }
+        },
+        {
+          "name": "Search by garment type",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/orders?garment=Saree",
+              "query": [{ "key": "garment", "value": "Saree" }]
+            }
+          }
+        },
+        {
+          "name": "Get single order",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/orders/{{order_id}}",
+            "description": "Get a single order by ID. Uses the order_id saved from Create Order."
+          }
+        },
+        {
+          "name": "Update order status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/orders/{{order_id}}/status",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PROCESSING\"\n}"
+            },
+            "description": "Update order status. Valid values: RECEIVED | PROCESSING | READY | DELIVERED"
+          }
+        },
+        {
+          "name": "Update status → READY",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/orders/{{order_id}}/status",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"status\": \"READY\" }" }
+          }
+        },
+        {
+          "name": "Update status → DELIVERED",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/orders/{{order_id}}/status",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"status\": \"DELIVERED\" }" }
+          }
+        },
+        {
+          "name": "Delete order",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/orders/{{order_id}}",
+            "description": "Permanently deletes an order."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get dashboard stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/dashboard",
+            "description": "Returns total orders, total revenue, orders per status, and top 5 garments."
+          }
+        }
+      ]
+    }
+  ]
+}
